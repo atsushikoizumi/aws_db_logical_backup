@@ -1,9 +1,6 @@
 # ベースイメージ
 FROM amazonlinux:2
 
-# AWSリージョン設定
-ENV AWS_region ap-northeast-1
-e
 # 初期設定
 RUN yum -y update && \
     # 追加で必要なパッケージをインストール
