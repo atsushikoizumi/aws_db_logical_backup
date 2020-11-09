@@ -1,5 +1,24 @@
 #!/bin/bash
 
+#
+# ver1.1
+#
+# [args]
+#  ./rds_logical_backup.sh  $DB_CLUSTER_IDENTIFIER
+#
+# [env]
+#  export DB_NAME=
+#  export DB_OWNER=
+#  export DB_OWNER_PASSWORD=
+#  export DB_INSTANCE_CLASS=
+#  export DB_SUBNET_GROUP=
+#  export DB_PORT=
+#  export VPC_SECURITY_GROUP_IDS=
+#  export S3_BUCKET=
+#  export S3_PREFIX=
+#
+#
+
 # restore cluster
 DB_CLUSTER_IDENTIFIER=$1
 DB_CLUSTER_IDENTIFIER_RESTORE=${DB_CLUSTER_IDENTIFIER}-backup
@@ -57,7 +76,7 @@ aws rds restore-db-cluster-from-snapshot \
     --engine "$ENGINE" \
     --engine-version "$ENGINE_VERSION" \
     --db-subnet-group-name "$DB_SUBNET_GROUP" \
-    --port "$POSTGRESQL_PORT" \
+    --port "$DB_PORT" \
     --vpc-security-group-ids "$VPC_SECURITY_GROUP_IDS" \
     2>&1 | tee -a $LOG_FILE
 if [ $? != 0 ]; then
@@ -96,8 +115,8 @@ done
 ENDPOINT=`aws rds describe-db-clusters --db-cluster-identifier "$DB_CLUSTER_IDENTIFIER_RESTORE" | jq -r .DBClusters[].Endpoint`
 
 # pg_dump
-export PGPASSWORD=$DB_PASSWORD
-pg_dump -Fc -v -w -h "${ENDPOINT}" -U ${DB_EXEC_USER} -p ${POSTGRESQL_PORT} --role=${DB_OWNER} -f "${PG_DUMP_FILE}" ${DB_NAME} 2>&1
+export PGPASSWORD=$DB_OWNER_PASSWORD
+pg_dump -Fc -v -w -h "${ENDPOINT}" -U ${DB_OWNER} -p ${DB_PORT} -f "${PG_DUMP_FILE}" ${DB_NAME} 2>&1
 if [ $? != 0 ]; then
     date "+[%Y-%m-%d %H:%M:%S] [ERROR] error happned when running pg_dump." 2>&1 | tee -a $LOG_FILE 2>&1
     exit
