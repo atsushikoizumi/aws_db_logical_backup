@@ -44,13 +44,13 @@ if [ $? != 0 ]; then
 fi
 
 # empty end
-if [ "$DB_CLUSTER_IDENTIFIER" = "empty" ]; then
+if [ -z "${DB_CLUSTER_IDENTIFIER}" ]; then
     date "+[%Y-%m-%d %H:%M:%S] [ERROR] please set DB_CLUSTER_IDENTIFIER." 2>&1 | tee -a $LOG_FILE 2>&1
     exit
 fi
 
 # describe-db-clusters 
-DESCRIBE_DB_CLUSTERS=`aws rds describe-db-clusters --db-cluster-identifier $DB_CLUSTER_IDENTIFIER`
+DESCRIBE_DB_CLUSTERS=`aws rds describe-db-clusters --db-cluster-identifier ${DB_CLUSTER_IDENTIFIER}`
 if [ $? != 0 ]; then
     date "+[%Y-%m-%d %H:%M:%S] [ERROR] error happned when running describe-db-clusters." 2>&1 | tee -a $LOG_FILE 2>&1
     exit
@@ -61,9 +61,12 @@ else
 fi
 
 # describe-db-cluster-snapshots
-DB_CLUSTER_SNAPSHOT_IDENTIFIERS=`aws rds describe-db-cluster-snapshots --db-cluster-identifier "$DB_CLUSTER_IDENTIFIER" | jq -r .DBClusterSnapshots[].DBClusterSnapshotIdentifier | sort -r`
+DB_CLUSTER_SNAPSHOT_IDENTIFIERS=`aws rds describe-db-cluster-snapshots --db-cluster-identifier "${DB_CLUSTER_IDENTIFIER}" | jq -r .DBClusterSnapshots[].DBClusterSnapshotIdentifier | sort -r`
 if [ $? != 0 ]; then
     date "+[%Y-%m-%d %H:%M:%S] [ERROR] error happned when running describe-db-cluster-snapshots." 2>&1 | tee -a $LOG_FILE 2>&1
+    exit
+elif [ -z "${DB_CLUSTER_SNAPSHOT_IDENTIFIERS}" ]; then
+    date "+[%Y-%m-%d %H:%M:%S] [WARNING] there is no snapshot." 2>&1 | tee -a $LOG_FILE 2>&1
     exit
 fi
 
