@@ -1,11 +1,12 @@
 #!/bin/bash
 
 #
-# ver1.2
+# ver1.3
 #
 # [secret manager env]
 #  環境変数（koizumi_dev_aurora_pass）を secret manager から受け取っています。
 #  そのため、実行環境毎に環境変数（koizumi_dev_aurora_pass）は変更しなければいけません。
+export PGPASSWORD=`echo ${koizumi_dev_aurora_pass} | jq -r .postgresql`
 #
 # [env]
 #  以下の環境変数を設定してタスク定義を作成してください。
@@ -41,9 +42,6 @@ if [ $? != 0 ]; then
     date "+[%Y-%m-%d %H:%M:%S] [ERROR] error happned when echo & tee -a LOG_FILE."
     exit
 fi
-
-# echo secrets
-echo "${koizumi_dev_aurora_pass}" 2>&1 | tee -a $LOG_FILE 2>&1
 
 # empty end
 if [ "$DB_CLUSTER_IDENTIFIER" = "empty" ]; then
@@ -120,7 +118,6 @@ done
 ENDPOINT=`aws rds describe-db-clusters --db-cluster-identifier "$DB_CLUSTER_IDENTIFIER_RESTORE" | jq -r .DBClusters[].Endpoint`
 
 # pg_dump
-export PGPASSWORD=$DB_OWNER_PASSWORD
 pg_dump -Fc -v -w -h "${ENDPOINT}" -U ${DB_OWNER} -p ${DB_PORT} -f "${PG_DUMP_FILE}" ${DB_NAME} 2>&1
 if [ $? != 0 ]; then
     date "+[%Y-%m-%d %H:%M:%S] [ERROR] error happned when running pg_dump." 2>&1 | tee -a $LOG_FILE 2>&1
