@@ -27,7 +27,7 @@ DB_INSTANCE_IDENTIFIER_RESTORE=${DB_CLUSTER_IDENTIFIER}-backup-01
 DATE_TIME=`date +%Y%m%d%H%M%S`
 PG_DUMP_FILE=/root/logs/${DB_CLUSTER_IDENTIFIER}_${DB_NAME}_${DATE_TIME}.dmp
 LOG_FILE=/root/logs/backup_${DB_CLUSTER_IDENTIFIER}.log
-if [ -f "$LOG_FILE"]; then
+if [ ! -f "${LOG_FILE}" ]; then
     touch $LOG_FILE
 fi
 
