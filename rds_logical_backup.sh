@@ -1,12 +1,16 @@
 #!/bin/bash
 
 #
-# ver1.1
+# ver1.2
 #
-# [args]
-#  ./rds_logical_backup.sh  $DB_CLUSTER_IDENTIFIER
+# [secret manager env]
+#  環境変数（koizumi_dev_aurora_pass）を secret manager から受け取っています。
+#  そのため、実行環境毎に環境変数（koizumi_dev_aurora_pass）は変更しなければいけません。
 #
 # [env]
+#  以下の環境変数を設定してタスク定義を作成してください。
+#  DBクラスターの数だけタスク定義を作成する必要があります。
+#  export DB_CLUSTER_IDENTIFIER=
 #  export DB_NAME=
 #  export DB_OWNER=
 #  export DB_OWNER_PASSWORD=
@@ -17,10 +21,8 @@
 #  export S3_BUCKET=
 #  export S3_PREFIX=
 #
-#
 
 # restore cluster
-DB_CLUSTER_IDENTIFIER=$1
 DB_CLUSTER_IDENTIFIER_RESTORE=${DB_CLUSTER_IDENTIFIER}-backup
 DB_CLUSTER_IDENTIFIER_FINAL=${DB_CLUSTER_IDENTIFIER}-final
 DB_INSTANCE_IDENTIFIER_RESTORE=${DB_CLUSTER_IDENTIFIER}-backup-01
@@ -39,6 +41,9 @@ if [ $? != 0 ]; then
     date "+[%Y-%m-%d %H:%M:%S] [ERROR] error happned when echo & tee -a LOG_FILE."
     exit
 fi
+
+# echo secrets
+echo "${koizumi_dev_aurora_pass}" 2>&1 | tee -a $LOG_FILE 2>&1
 
 # empty end
 if [ "$DB_CLUSTER_IDENTIFIER" = "empty" ]; then
