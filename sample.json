@@ -1,0 +1,7 @@
+{
+    "mysql": "Admin123!",
+    "oracle": "Admin123!",
+    "postgresql": "Admin123!",
+    "redshift": "Admin123!",
+    "sqlserver": "Admin123!"
+  }

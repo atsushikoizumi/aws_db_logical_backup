@@ -6,18 +6,19 @@
 # [task difinittion env]
 #  以下の環境変数を設定してタスク定義を作成してください。
 #  DBクラスターの数だけタスク定義を作成する必要があります。
-#  export tags_owner=
-#  export env_tags=
-#  export DB_CLUSTER_IDENTIFIER=
-#  export DB_NAME=
-#  export DB_OWNER=
-#  export PASSWORD_KEY=
-#  export DB_INSTANCE_CLASS=
-#  export DB_SUBNET_GROUP=
-#  export DB_PORT=
-#  export VPC_SECURITY_GROUP_ID=
-#  export S3_BUCKET=
-#  export S3_PREFIX=
+export tags_owner=koizumi
+export tags_env=dev
+export DB_CLUSTER_IDENTIFIER=koizumi-dev-cls-aurora-mysql-1st
+export DB_NAME=xx00
+export DB_OWNER=masteruser
+export PASSWORD_KEY=mysql
+export DB_INSTANCE_CLASS=db.t3.medium
+export DB_SUBNET_GROUP=koizumi-dev-subnet
+export DB_PORT=5432
+export VPC_SECURITY_GROUP_ID=sg-02dc90cfb43154370
+export S3_BUCKET=koizumi-dev-data
+export S3_PREFIX=backup/rds/postgresql
+export koizumi_dev_DBPASSWORD=`cat sample.json`
 #
 # [secret manager]
 #  環境変数 "${owner_tags}_${env_tags}_DBPASSWORD" を secret manager から受け取るようタスク定義を設定します。
@@ -37,7 +38,7 @@ DB_CLUSTER_IDENTIFIER_RESTORE=${DB_CLUSTER_IDENTIFIER}-backup
 DB_CLUSTER_IDENTIFIER_FINAL=${DB_CLUSTER_IDENTIFIER}-final
 DB_INSTANCE_IDENTIFIER_RESTORE=${DB_CLUSTER_IDENTIFIER}-backup-01
 DATE_TIME=`date +%Y%m%d%H%M%S`
-DUMP_FILE=/root/efs/${DB_CLUSTER_IDENTIFIER}_${DB_NAME}_${DATE_TIME}.dmp
+DUMP_FILE=${DB_CLUSTER_IDENTIFIER}_${DB_NAME}_${DATE_TIME}.dmp
 
 # start
 echo "====================="
