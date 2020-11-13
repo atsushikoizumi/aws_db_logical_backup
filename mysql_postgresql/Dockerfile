@@ -20,5 +20,5 @@ RUN yum -y update && \
 
 COPY ./rds_logical_backup.sh /root/
 RUN chmod 755 /root/rds_logical_backup.sh
-RUN mkdir /root/logs
+RUN mkdir /root/efs
 ENTRYPOINT ["/root/rds_logical_backup.sh"]
