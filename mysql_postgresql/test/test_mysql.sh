@@ -15,10 +15,10 @@ export PASSWORD_KEY=mysql
 export DB_INSTANCE_CLASS=db.t3.medium
 export DB_SUBNET_GROUP=koizumi-dev-subnet
 export DB_PORT=5432
-export VPC_SECURITY_GROUP_ID=sg-02dc90cfb43154370
+export VPC_SECURITY_GROUP_IDS=sg-02dc90cfb43154370
 export S3_BUCKET=koizumi-dev-data
-export S3_PREFIX=backup/rds/postgresql
-export koizumi_dev_DBPASSWORD=`cat sample.json`
+export S3_PREFIX=backup/rds/mysql
+export koizumi_dev_DBPASSWORD=`cat /root/sample.json`
 #
 # [secret manager]
 #  環境変数 "${owner_tags}_${env_tags}_DBPASSWORD" を secret manager から受け取るようタスク定義を設定します。
@@ -31,7 +31,10 @@ export koizumi_dev_DBPASSWORD=`cat sample.json`
 #  環境変数 PASSWORD_KEY=${key} を指定してください。
 #
 SECRET_NAME=`echo ${tags_owner}_${tags_env}_DBPASSWORD`
-
+echo $SECRET_NAME
+echo ${!SECRET_NAME}
+echo ${!SECRET_NAME} | jq -r .${PASSWORD_KEY}
+exit
 
 # restore cluster
 DB_CLUSTER_IDENTIFIER_RESTORE=${DB_CLUSTER_IDENTIFIER}-backup
@@ -58,6 +61,7 @@ if [ $? != 0 ]; then
     date "+[%Y-%m-%d %H:%M:%S] [ERROR] error happned when running describe-db-clusters."
     exit
 else
+    echo $DESCRIBE_DB_CLUSTERS
     ENGINE=`echo $DESCRIBE_DB_CLUSTERS | jq -r .[][].Engine`
     ENGINE_VERSION=`echo $DESCRIBE_DB_CLUSTERS | jq -r .[][].EngineVersion`
     DB_CLUSTER_PARAMETER_GROUP=`echo $DESCRIBE_DB_CLUSTERS | jq -r .[][].DBClusterParameterGroup`
@@ -72,6 +76,8 @@ if [ $? != 0 ]; then
 elif [ -z "${DB_CLUSTER_SNAPSHOT_IDENTIFIERS}" ]; then
     date "+[%Y-%m-%d %H:%M:%S] [WARNING] there is no snapshot."
     exit
+else
+    echo $DB_CLUSTER_SNAPSHOT_IDENTIFIERS
 fi
 
 # string to array
@@ -88,9 +94,9 @@ aws rds restore-db-cluster-from-snapshot \
     --engine-version "$ENGINE_VERSION" \
     --db-subnet-group-name "$DB_SUBNET_GROUP" \
     --port "$DB_PORT" \
-    --vpc-security-group-ids "$VPC_SECURITY_GROUP_ID"
+    --vpc-security-group-ids "$VPC_SECURITY_GROUP_IDS"
 EOF
-aws rds restore-db-cluster-from-snapshot \
+RESTORE_DB_CLUSTER=`aws rds restore-db-cluster-from-snapshot \
     --db-cluster-identifier "$DB_CLUSTER_IDENTIFIER_RESTORE" \
     --snapshot-identifier "$DB_CLUSTER_SNAPSHOT_IDENTIFIER" \
     --db-cluster-parameter-group-name "$DB_CLUSTER_PARAMETER_GROUP" \
@@ -98,11 +104,12 @@ aws rds restore-db-cluster-from-snapshot \
     --engine-version "$ENGINE_VERSION" \
     --db-subnet-group-name "$DB_SUBNET_GROUP" \
     --port "$DB_PORT" \
-    --vpc-security-group-ids "$VPC_SECURITY_GROUP_ID"
-   
+    --vpc-security-group-ids "$VPC_SECURITY_GROUP_IDS"`
 if [ $? != 0 ]; then
     date "+[%Y-%m-%d %H:%M:%S] [ERROR] error happned when running restore-db-cluster-from-snapshot."
     exit
+else
+    echo $RESTORE_DB_CLUSTER
 fi
 
 # polling cluster status
@@ -124,12 +131,18 @@ aws rds create-db-instance \
     --engine "$ENGINE" \
     --engine-version "$ENGINE_VERSION"
 EOF
-aws rds create-db-instance \
+CREATE_DB_INSTANCE=`aws rds create-db-instance \
     --db-instance-identifier "$DB_INSTANCE_IDENTIFIER_RESTORE" \
     --db-cluster-identifier "$DB_CLUSTER_IDENTIFIER_RESTORE" \
     --db-instance-class "$DB_INSTANCE_CLASS" \
     --engine "$ENGINE" \
-    --engine-version "$ENGINE_VERSION"
+    --engine-version "$ENGINE_VERSION"`
+if [ $? != 0 ]; then
+    date "+[%Y-%m-%d %H:%M:%S] [ERROR] error happned when running create-db-instance."
+    exit
+else
+    echo $CREATE_DB_INSTANCE
+fi
 
 # polling instance status
 status=""
@@ -142,7 +155,6 @@ do
 done
 
 # describe-db-instances
-echo "aws rds describe-db-clusters --db-cluster-identifier $DB_CLUSTER_IDENTIFIER_RESTORE | jq -r .DBClusters[].Endpoint"
 ENDPOINT=`aws rds describe-db-clusters --db-cluster-identifier "$DB_CLUSTER_IDENTIFIER_RESTORE" | jq -r .DBClusters[].Endpoint`
 
 # dump
@@ -209,12 +221,14 @@ cat <<EOF
 aws rds delete-db-instance \
     --db-instance-identifier "$DB_INSTANCE_IDENTIFIER_RESTORE"
 EOF
-aws rds delete-db-instance \
-    --db-instance-identifier "$DB_INSTANCE_IDENTIFIER_RESTORE"
-   
+DELETE_DB_INSTANCE=`aws rds delete-db-instance \
+    --db-instance-identifier "$DB_INSTANCE_IDENTIFIER_RESTORE"`
+
 if [ $? != 0 ]; then
     date "+[%Y-%m-%d %H:%M:%S] [ERROR] error happned when running delete-db-instance."
     exit
+else
+    echo $DELETE_DB_INSTANCE
 fi
 
 # polling instance exists
@@ -238,14 +252,16 @@ aws rds delete-db-cluster \
     --no-skip-final-snapshot \
     --final-db-snapshot-identifier "$DB_CLUSTER_IDENTIFIER_FINAL"
 EOF
-aws rds delete-db-cluster \
+DELETE_DB_CLUSTER=`aws rds delete-db-cluster \
     --db-cluster-identifier "$DB_CLUSTER_IDENTIFIER_RESTORE" \
     --no-skip-final-snapshot \
-    --final-db-snapshot-identifier "$DB_CLUSTER_IDENTIFIER_FINAL"
-   
+    --final-db-snapshot-identifier "$DB_CLUSTER_IDENTIFIER_FINAL"`
+
 if [ $? != 0 ]; then
     date "+[%Y-%m-%d %H:%M:%S] [ERROR] error happned when running delete-db-cluster."
     exit
+else
+    echo $DELETE_DB_CLUSTER
 fi
 
 # polling cluster exists
@@ -267,12 +283,14 @@ cat <<EOF
 aws rds delete-db-cluster-snapshot \
     --db-cluster-snapshot-identifier "$DB_CLUSTER_IDENTIFIER_FINAL"
 EOF
-aws rds delete-db-cluster-snapshot \
-    --db-cluster-snapshot-identifier "$DB_CLUSTER_IDENTIFIER_FINAL"
+DELETE_DB_CLS_SNAPSHOT=`aws rds delete-db-cluster-snapshot \
+    --db-cluster-snapshot-identifier "$DB_CLUSTER_IDENTIFIER_FINAL"`
 
 if [ $? != 0 ]; then
     date "+[%Y-%m-%d %H:%M:%S] [ERROR] error happned when running delete-db-cluster-snapshot."
     exit
+else
+    echo $DELETE_DB_CLS_SNAPSHOT
 fi
 
 # end
