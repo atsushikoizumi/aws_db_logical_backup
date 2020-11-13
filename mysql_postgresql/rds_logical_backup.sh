@@ -39,9 +39,7 @@ DATE_TIME=`date +%Y%m%d%H%M%S`
 DUMP_FILE=/root/efs/${DB_CLUSTER_IDENTIFIER}_${DB_NAME}_${DATE_TIME}.dmp
 
 # start
-echo "====================="
-echo "===     start     ==="
-echo "====================="
+date "+[%Y-%m-%d %H:%M:%S] rds logical backup start."
 
 # empty end
 if [ -z "${DB_CLUSTER_IDENTIFIER}" ]; then
