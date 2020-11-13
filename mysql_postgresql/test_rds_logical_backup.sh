@@ -10,7 +10,7 @@ export tags_owner=koizumi
 export tags_env=dev
 export DB_CLUSTER_IDENTIFIER=koizumi-dev-cls-aurora-mysql-1st
 export DB_NAME=xx00
-export DB_OWNER=masteruser
+export DB_MASTER=masteruser
 export PASSWORD_KEY=mysql
 export DB_INSTANCE_CLASS=db.t3.medium
 export DB_SUBNET_GROUP=koizumi-dev-subnet
@@ -149,8 +149,8 @@ ENDPOINT=`aws rds describe-db-clusters --db-cluster-identifier "$DB_CLUSTER_IDEN
 if [ "$ENGINE" = 'aurora-postgresql' ]; then
     # aurora postgresql
     export PGPASSWORD=`echo ${!SECRET_NAME} | jq -r .${PASSWORD_KEY}`
-    echo "pg_dump -Fc -v -w -h ${ENDPOINT} -U ${DB_OWNER} -p ${DB_PORT} -f ${DUMP_FILE} ${DB_NAME}"
-    pg_dump -Fc -v -w -h "${ENDPOINT}" -U ${DB_OWNER} -p ${DB_PORT} -f "${DUMP_FILE}" ${DB_NAME}
+    echo "pg_dump -Fc -v -w -h ${ENDPOINT} -U ${DB_MASTER} -p ${DB_PORT} -f ${DUMP_FILE} ${DB_NAME}"
+    pg_dump -Fc -v -w -h "${ENDPOINT}" -U ${DB_MASTER} -p ${DB_PORT} -f "${DUMP_FILE}" ${DB_NAME}
     if [ $? != 0 ]; then
         date "+[%Y-%m-%d %H:%M:%S] [ERROR] error happned when running pg_dump."
         exit
@@ -158,8 +158,8 @@ if [ "$ENGINE" = 'aurora-postgresql' ]; then
 elif [ "$ENGINE" = 'aurora-mysql' ]; then
     # aurora mysql
     MYSQL_PWD=`echo ${!SECRET_NAME} | jq -r .${PASSWORD_KEY}`
-    echo "mysqldump --defaults-extra-file=<(printf '[mysqldump]\npassword=%s\n' \"password\") -h ${ENDPOINT} -u ${DB_OWNER} -P ${DB_PORT} -B ${DB_NAME} --set-gtid-purged=OFF --single-transaction --verbose | gzip > ${DUMP_FILE}.gz"
-    mysqldump --defaults-extra-file=<(printf '[mysqldump]\npassword=%s\n' \"${MYSQL_PWD}\") -h ${ENDPOINT} -u${DB_OWNER} -P ${DB_PORT} -B ${DB_NAME} --set-gtid-purged=OFF --single-transaction --verbose | gzip > ${DUMP_FILE}.gz
+    echo "mysqldump --defaults-extra-file=<(printf '[mysqldump]\npassword=%s\n' \"password\") -h ${ENDPOINT} -u ${DB_MASTER} -P ${DB_PORT} -B ${DB_NAME} --set-gtid-purged=OFF --single-transaction --verbose | gzip > ${DUMP_FILE}.gz"
+    mysqldump --defaults-extra-file=<(printf '[mysqldump]\npassword=%s\n' \"${MYSQL_PWD}\") -h ${ENDPOINT} -u${DB_MASTER} -P ${DB_PORT} -B ${DB_NAME} --set-gtid-purged=OFF --single-transaction --verbose | gzip > ${DUMP_FILE}.gz
     if [ $? != 0 ]; then
         date "+[%Y-%m-%d %H:%M:%S] [ERROR] error happned when running mysqldump."
         exit

@@ -7,10 +7,10 @@
 #  以下の環境変数を設定してタスク定義を作成してください。
 #  DBクラスターの数だけタスク定義を作成する必要があります。
 #  export tags_owner=
-#  export env_tags=
+#  export tags_env=
 #  export DB_CLUSTER_IDENTIFIER=
 #  export DB_NAME=
-#  export DB_OWNER=
+#  export DB_MASTER=
 #  export PASSWORD_KEY=
 #  export DB_INSTANCE_CLASS=
 #  export DB_SUBNET_GROUP=
@@ -20,8 +20,8 @@
 #  export S3_PREFIX=
 #
 # [secret manager]
-#  環境変数 "${owner_tags}_${env_tags}_DBPASSWORD" を secret manager から受け取るようタスク定義を設定します。
-#  secret manager のシークレット名は "${owner_tags}_${env_tags}_DBPASSWORD" で固定です。
+#  環境変数 "${tags_owner}_${tags_env}_DBPASSWORD" を secret manager から受け取るようタスク定義を設定します。
+#  secret manager のシークレット名は "${owner_tags}_${tags_env}_DBPASSWORD" で固定です。
 #  シークレットの中身は以下のように key value 形式で設定しています。
 #    key           value
 #    postgresql    password
@@ -148,8 +148,8 @@ ENDPOINT=`aws rds describe-db-clusters --db-cluster-identifier "$DB_CLUSTER_IDEN
 if [ "$ENGINE" = 'aurora-postgresql' ]; then
     # aurora postgresql
     export PGPASSWORD=`echo ${!SECRET_NAME} | jq -r .${PASSWORD_KEY}`
-    echo "pg_dump -Fc -v -w -h ${ENDPOINT} -U ${DB_OWNER} -p ${DB_PORT} -f ${DUMP_FILE} ${DB_NAME}"
-    pg_dump -Fc -v -w -h "${ENDPOINT}" -U ${DB_OWNER} -p ${DB_PORT} -f "${DUMP_FILE}" ${DB_NAME}
+    echo "pg_dump -Fc -v -w -h ${ENDPOINT} -U ${DB_MASTER} -p ${DB_PORT} -f ${DUMP_FILE} ${DB_NAME}"
+    pg_dump -Fc -v -w -h "${ENDPOINT}" -U ${DB_MASTER} -p ${DB_PORT} -f "${DUMP_FILE}" ${DB_NAME}
     if [ $? != 0 ]; then
         date "+[%Y-%m-%d %H:%M:%S] [ERROR] error happned when running pg_dump."
         exit
@@ -157,8 +157,8 @@ if [ "$ENGINE" = 'aurora-postgresql' ]; then
 elif [ "$ENGINE" = 'aurora-mysql' ]; then
     # aurora mysql
     MYSQL_PWD=`echo ${!SECRET_NAME} | jq -r .${PASSWORD_KEY}`
-    echo "mysqldump --defaults-extra-file=<(printf '[mysqldump]\npassword=%s\n' \"password\") -h ${ENDPOINT} -u ${DB_OWNER} -P ${DB_PORT} -B ${DB_NAME} --set-gtid-purged=OFF --single-transaction --verbose | gzip > ${DUMP_FILE}.gz"
-    mysqldump --defaults-extra-file=<(printf '[mysqldump]\npassword=%s\n' \"${MYSQL_PWD}\") -h ${ENDPOINT} -u${DB_OWNER} -P ${DB_PORT} -B ${DB_NAME} --set-gtid-purged=OFF --single-transaction --verbose | gzip > ${DUMP_FILE}.gz
+    echo "mysqldump --defaults-extra-file=<(printf '[mysqldump]\npassword=%s\n' \"password\") -h ${ENDPOINT} -u ${DB_MASTER} -P ${DB_PORT} -B ${DB_NAME} --set-gtid-purged=OFF --single-transaction --verbose | gzip > ${DUMP_FILE}.gz"
+    mysqldump --defaults-extra-file=<(printf '[mysqldump]\npassword=%s\n' \"${MYSQL_PWD}\") -h ${ENDPOINT} -u${DB_MASTER} -P ${DB_PORT} -B ${DB_NAME} --set-gtid-purged=OFF --single-transaction --verbose | gzip > ${DUMP_FILE}.gz
     if [ $? != 0 ]; then
         date "+[%Y-%m-%d %H:%M:%S] [ERROR] error happned when running mysqldump."
         exit
