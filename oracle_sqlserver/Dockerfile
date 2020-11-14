@@ -9,12 +9,12 @@ RUN mkdir -p /root/efs/odbc
 COPY ./OracleODBCDriverforUnix.deb /root/efs/odbc/
 
 # install odbc driver
-RUN apt-get install unixODBC unixODBC-dev && \
-    dpkg -i /root/efs/odbc/package.deb
+#RUN apt-get install unixODBC unixODBC-dev && \
+#    dpkg -i /root/efs/odbc/package.deb
     #/opt/cdata/cdata-odbc-driver-for-oracleoci/cdata.odbc.oracleoci.ini
 
 # pip install
-RUN pip3 install boto3 datetime pyodbc
+RUN pip3 install boto3 datetime
 
 # set module
 COPY ./rds_logical_backup.py /root/
