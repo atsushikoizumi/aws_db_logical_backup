@@ -3,18 +3,18 @@ FROM python:3.8.6-buster
 
 # [reference]
 # https://www.cdata.com/jp/kb/tech/oracledb-odbc-python-linux.rst
+# https://dev.classmethod.jp/articles/connect-linux-to-oracle-with-odbc/
 
-# put odbc driver
+# put driver module
 RUN mkdir -p /root/efs/odbc
 COPY ./OracleODBCDriverforUnix.deb /root/efs/odbc/
 
 # install odbc driver
-#RUN apt-get install unixODBC unixODBC-dev && \
-#    dpkg -i /root/efs/odbc/package.deb
-    #/opt/cdata/cdata-odbc-driver-for-oracleoci/cdata.odbc.oracleoci.ini
+RUN apt install -y unixodbc unixodbc-dev && \
+    dpkg -i /root/efs/odbc/OracleODBCDriverforUnix.deb
 
 # pip install
-RUN pip3 install boto3 datetime
+RUN pip3 install boto3 datetime pyodbc
 
 # set module
 COPY ./rds_logical_backup.py /root/

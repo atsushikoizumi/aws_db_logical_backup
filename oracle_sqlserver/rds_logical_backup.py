@@ -95,6 +95,6 @@ for i in range(len(res1['DBInstances'])):
 
     # logical backup
     
-
+    cnxn = pyodbc.connect('DRIVER={CData ODBC Driver for Oracle};User=masteruser;Password="ADmin123!";Server=koizumi-dev-db-oracle-1st.cp18wjhx9brf.eu-north-1.rds.amazonaws.com;Port=1521;')
 
     #delete_db_snapshot
