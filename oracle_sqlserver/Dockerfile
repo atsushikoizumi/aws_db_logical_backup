@@ -13,6 +13,12 @@ COPY ./OracleODBCDriverforUnix.deb /root/efs/odbc/
 RUN apt install -y unixodbc unixodbc-dev && \
     dpkg -i /root/efs/odbc/OracleODBCDriverforUnix.deb
 
+# oracle driver install
+COPY ./instantclient-basic-linux.x64-19.9.0.0.0dbru.zip /root/
+RUN mkdir -p /opt/oracle && \
+    unzip instantclient-basic-linux.x64-19.9.0.0.0dbru.zip -d /opt/oracle && \
+    apt install -y libaio1
+
 # pip install
 RUN pip3 install boto3 datetime pyodbc
 
