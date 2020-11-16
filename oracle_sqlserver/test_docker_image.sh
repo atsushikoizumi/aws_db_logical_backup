@@ -1,6 +1,6 @@
 #!/bin/bash
 
-tag_ver="orss_logicalbackup:ver1.1"
+tag_ver="orss_logicalbackup:ver1.2"
 
 docker build -t ${tag_ver} .
 containerid=`docker run -d -it ${tag_ver} /bin/bash`
