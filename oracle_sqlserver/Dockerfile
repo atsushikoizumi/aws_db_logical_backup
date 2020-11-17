@@ -2,7 +2,6 @@
 FROM python:3.8.6-buster
 
 # [reference]
-# https://www.cdata.com/jp/kb/tech/oracledb-odbc-python-linux.rst
 # https://dev.classmethod.jp/articles/connect-linux-to-oracle-with-odbc/
 # https://qiita.com/6in/items/ac77fd4aaa77bbca9789
 
@@ -37,7 +36,6 @@ COPY ./test.py /root/
 # set env
 ENV  ORACLE_HOME /opt/oracle/instantclient_19_9
 ENV  LD_LIBRARY_PATH $ORACLE_HOME
-ENV  PATH $ORACLE_HOME/bin:$PATH
 ENV  NLS_LANG Japanese_Japan.AL32UTF8
 
 # run script
