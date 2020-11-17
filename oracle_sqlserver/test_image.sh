@@ -2,7 +2,7 @@
 
 # git lfs memo
 
-tag_ver="orss_logicalbackup:ver0.2"
+tag_ver="orss_logicalbackup:ver0.6"
 
 docker build -t ${tag_ver} .
 containerid=`docker run -d -it ${tag_ver} /bin/bash`
