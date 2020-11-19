@@ -35,7 +35,7 @@ RUN  curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
      ACCEPT_EULA=Y apt-get install mssql-tools
 
 # pip install
-RUN  pip3 install boto3 datetime pyodbc
+RUN  pip3 install boto3 datetime os pandas pyodbc numpy time
 
 # set module
 COPY ./test_oracle.py /root/

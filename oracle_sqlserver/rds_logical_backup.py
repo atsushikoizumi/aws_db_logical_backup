@@ -1,6 +1,8 @@
 import os
 import datetime
 import boto3
+import backup_oracle
+import backup_sqlserver
 
 # rds
 rds = boto3.client('rds')
@@ -93,8 +95,18 @@ for i in range(len(res1['DBInstances'])):
         print(str(datetime.datetime.now()) + ':[ERROR] rds.get_waiter()')
         exit()
 
-    # logical backup
-    
-    #cnxn = pyodbc.connect('DRIVER={CData ODBC Driver for Oracle};User=masteruser;Password="ADmin123!";Server=koizumi-dev-db-oracle-1st.cp18wjhx9brf.eu-north-1.rds.amazonaws.com;Port=1521;')
+    # get restore dbinstance endpoint
+    try:
+        res3 = rds.describe_db_instances(
+            DBInstanceIdentifier = res1['DBInstances'][i]['DBInstanceIdentifier'] + "-backup"
+        )
+        os.environ['DB_ENDPOINT'] = res3['Endpoint']['Address']
+    except:
+        print(str(datetime.datetime.now()) + ':[ERROR] rds.describe_db_instances()')
+        exit()
 
+    # logical backup
+    backup_oracle.runsql_ora()
+    
     #delete_db_snapshot
+
