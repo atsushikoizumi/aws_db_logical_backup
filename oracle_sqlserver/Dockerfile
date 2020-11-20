@@ -38,8 +38,9 @@ RUN  curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
 RUN  pip3 install boto3 datetime os pandas pyodbc numpy time
 
 # set module
-COPY ./test_oracle.py /root/
-COPY ./test_sqlserver.py /root/
+COPY ./backup_oracle.py /root/
+COPY ./backup_sqlserver.py /root/
+COPY ./rds_logical_backup.py /root/
 
 # set env
 ENV  ORACLE_HOME /opt/oracle/instantclient_19_9
@@ -48,4 +49,4 @@ ENV  NLS_LANG Japanese_Japan.AL32UTF8
 ENV  PATH $PATH:/opt/mssql-tools/bin
 
 # run script
-#ENTRYPOINT ["python3","/root/test_sqlserver.py"]
+ENTRYPOINT ["python3","/root/rds_logical_backup.py"]

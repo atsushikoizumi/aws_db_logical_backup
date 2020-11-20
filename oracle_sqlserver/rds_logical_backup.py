@@ -7,17 +7,16 @@ import backup_sqlserver
 # rds
 rds = boto3.client('rds')
 
-# describe_db_instances
+# DBインスタンス一覧取得
 try:
     res1 = rds.describe_db_instances()
 except:
     print(str(datetime.datetime.now()) + ':[ERROR] rds.describe_db_instances()')
+    print(res1)
     exit()
 
-# DBInstanceIdentifier を動的に取得
-# 検索条件1 TagList の Env=tags_env, Owner=tags_owner
-# 検索条件2 Engine に aurora が含まれない。
-# 上記の条件で絞っておくことで他人のリソースを指定できない。
+# 検索条件 TagList の Env=tags_env, Owner=tags_owner
+# 上記の条件で絞っておくことで他人のリソースへの影響を排除できる。
 for i in range(len(res1['DBInstances'])):
     # タグ名でフィルター Env=tags_env, Owner=tags_owner なら f=2 で処理継続
     f = 0
@@ -30,35 +29,32 @@ for i in range(len(res1['DBInstances'])):
                 f += 1
     if f < 2:
         continue
+    
     # aurora 以外なら処理継続
     if 'aurora' in str(res1['DBInstances'][i]['Engine']):
         continue
-
-    # スナップショットの一覧を配列で取得
-    try:
-        res2     = rds.describe_db_snapshots()
-        res2_ary = []
-    except:
-        print(str(datetime.datetime.now()) + ':[ERROR] rds.describe_db_snapshots()')
-        exit()
 
     # task で指定した DBInstanceIdentifier なら処理継続
     if os.environ['DB_INSTANCE_IDENTIFIER'] != res1['DBInstances'][i]['DBInstanceIdentifier']:
         continue
 
-    # 最新のスナップショット名を取得
-    res2_ary.sort(reverse=True)
+    # スナップショットの一覧を取得
+    try:
+        res2 = rds.describe_db_snapshots(
+            DBInstanceIdentifier = os.environ['DB_INSTANCE_IDENTIFIER']
+        )
+    except:
+        print(str(datetime.datetime.now()) + ':[ERROR] rds.describe_db_snapshots()')
+        print(res2)
+        exit()
 
-    print(res1['DBInstances'][i]['Endpoint']['Address'])
-    print(res1['DBInstances'][i]['Endpoint']['Port'])
-
-    # restore_db_instance_from_db_snapshot
+    # 最新のスナップショットからリストア実行
     # rds oracle
     if "oracle" in res1['DBInstances'][i]['Engine']:
         try:
-            rds.restore_db_instance_from_db_snapshot(
+            res = rds.restore_db_instance_from_db_snapshot(
                 DBInstanceIdentifier = os.environ['DB_INSTANCE_IDENTIFIER'] + "-backup",
-                DBSnapshotIdentifier = res2_ary[0],
+                DBSnapshotIdentifier = res2['DBSnapshots'][-1]['DBSnapshotIdentifier'],
                 DBInstanceClass      = os.environ['DB_INSTANCE_CLASS'],
                 Port                 = int(os.environ['DB_PORT']),
                 DBSubnetGroupName    = os.environ['DB_SUBNET_GROUP'],
@@ -72,41 +68,93 @@ for i in range(len(res1['DBInstances'])):
                 OptionGroupName      = res1['DBInstances'][i]['OptionGroupMemberships'][0]['OptionGroupName'],
                 Tags                 = res1['DBInstances'][i]['TagList'],
                 StorageType          = "gp2",
-                VpcSecurityGroupIds  = [
-                    os.environ['VPC_SECURITY_GROUP_IDS'],
-                ],
+                VpcSecurityGroupIds  = [os.environ['VPC_SECURITY_GROUP_IDS']],
                 CopyTagsToSnapshot   = True,
-                EnableCloudwatchLogsExports = [
-                    "alert", "audit", "listener", "trace"
-                ],
+                EnableCloudwatchLogsExports = ["alert", "audit", "listener", "trace"],
                 DeletionProtection   = False
             )
         except:
             print(str(datetime.datetime.now()) + ':[ERROR] rds.restore_db_instance_from_db_snapshot()')
+            print(res)
             exit()
 
-    # waite instance available
+    # rds sqlserver
+    if "sqlserver" in res1['DBInstances'][i]['Engine']:
+        try:
+            res = rds.restore_db_instance_from_db_snapshot(
+                DBInstanceIdentifier = os.environ['DB_INSTANCE_IDENTIFIER'] + "-backup",
+                DBSnapshotIdentifier = res2['DBSnapshots'][-1]['DBSnapshotIdentifier'],
+                DBInstanceClass      = os.environ['DB_INSTANCE_CLASS'],
+                Port                 = int(os.environ['DB_PORT']),
+                DBSubnetGroupName    = os.environ['DB_SUBNET_GROUP'],
+                MultiAZ              = False,
+                PubliclyAccessible   = False,
+                AutoMinorVersionUpgrade = False,
+                LicenseModel         = "license-included",
+                Engine               = res1['DBInstances'][i]['Engine'],
+                DBParameterGroupName = res1['DBInstances'][i]['DBParameterGroups'][0]['DBParameterGroupName'],
+                OptionGroupName      = res1['DBInstances'][i]['OptionGroupMemberships'][0]['OptionGroupName'],
+                Tags                 = res1['DBInstances'][i]['TagList'],
+                StorageType          = "gp2",
+                VpcSecurityGroupIds  = [os.environ['VPC_SECURITY_GROUP_IDS']],
+                CopyTagsToSnapshot   = True,
+                EnableCloudwatchLogsExports = ["agent", "error"],
+                DeletionProtection   = False
+            )
+        except:
+            print(str(datetime.datetime.now()) + ':[ERROR] rds.restore_db_instance_from_db_snapshot()')
+            print(res)
+            exit()
+
+    # インスタンスの状態が available になるまで待機
     try:
         waiter = rds.get_waiter('db_instance_available')
-        waiter.wait(
+        res = waiter.wait(
             DBInstanceIdentifier = res1['DBInstances'][i]['DBInstanceIdentifier'] + "-backup"
         )
     except:
         print(str(datetime.datetime.now()) + ':[ERROR] rds.get_waiter()')
+        print(res)
         exit()
 
-    # get restore dbinstance endpoint
+    # oracle の場合、S3_INTEGRATIONのロールを付与
+    if "oracle" in res1['DBInstances'][i]['Engine']:
+        try:
+            res = rds.add_role_to_db_instance(
+                DBInstanceIdentifier = res1['DBInstances'][i]['DBInstanceIdentifier'] + "-backup",
+                RoleArn              = os.environ['S3_INTEGRATION'],
+                FeatureName          = "S3_INTEGRATION"
+            )
+        except:
+            print(str(datetime.datetime.now()) + ':[ERROR] rds.add_role_to_db_instance()')
+            print(res)
+            exit()
+
+    # バックアップ用インスタンスのENDPOINTを取得
     try:
         res3 = rds.describe_db_instances(
             DBInstanceIdentifier = res1['DBInstances'][i]['DBInstanceIdentifier'] + "-backup"
         )
-        os.environ['DB_ENDPOINT'] = res3['Endpoint']['Address']
+        os.environ['DB_ENDPOINT'] = res3['DBInstances'][0]['Endpoint']['Address']
     except:
         print(str(datetime.datetime.now()) + ':[ERROR] rds.describe_db_instances()')
+        print(res3)
         exit()
 
-    # logical backup
-    backup_oracle.runsql_ora()
-    
-    #delete_db_snapshot
+    # 論理バックアップ開始
+    if "oracle" in res1['DBInstances'][i]['Engine']:
+        backup_oracle.runsql_ora()
+    elif "sqlserver" in res1['DBInstances'][i]['Engine']:
+        backup_sqlserver.runsql_mss()
 
+    # delete dbinstance
+    try:
+        res = rds.delete_db_instance(
+            DBInstanceIdentifier   = res1['DBInstances'][i]['DBInstanceIdentifier'] + "-backup",
+            SkipFinalSnapshot      = True,
+            DeleteAutomatedBackups = False
+        )
+    except:
+        print(str(datetime.datetime.now()) + ':[ERROR] rds.delete_db_instance()')
+        print(res)
+        exit()

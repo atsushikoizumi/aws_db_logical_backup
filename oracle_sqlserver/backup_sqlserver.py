@@ -10,21 +10,21 @@ def runsql_mss():
     edp = os.environ['DB_ENDPOINT']
     prt = os.environ['DB_PORT']
     dbn = os.environ['DB_NAME']
-    usr = os.environ['DB_USER']
+    usr = os.environ['DB_MASTER']
     pwd = os.environ['DB_PASSWORD']
 
     # バックアップ環境変数
-    hoge = {'DB_IDENTIFIER': "", 'DB_NAME': "", 'BACKUP_FILE': "", 'S3_BUCKET': "", 'S3_PREFIX': ""}
-    hoge['DB_IDENTIFIER'] = os.environ['DB_IDENTIFIER']
+    hoge = {'DB_INSTANCE_IDENTIFIER': "", 'DB_NAME': "", 'BACKUP_FILE': "", 'S3_BUCKET': "", 'S3_PREFIX': ""}
+    hoge['DB_INSTANCE_IDENTIFIER'] = os.environ['DB_INSTANCE_IDENTIFIER']
     hoge['DB_NAME'] = os.environ['DB_NAME']
-    hoge['BACKUP_FILE'] = os.environ['DB_IDENTIFIER'] + "-" + os.environ['DB_NAME'] + ".bak"
+    hoge['BACKUP_FILE'] = os.environ['DB_INSTANCE_IDENTIFIER'] + "-" + os.environ['DB_NAME'] + ".bak"
     hoge['S3_BUCKET'] = os.environ['S3_BUCKET']
     ymd = datetime.date.today().strftime('%Y%m%d')
-    hoge['S3_PREFIX'] = os.environ['S3_PREFIX'] + "/" + ymd
+    hoge['S3_PREFIX'] = os.environ['S3_PREFIX'] + "/" + os.environ['DB_INSTANCE_IDENTIFIER'] + "/" + ymd
 
     # 接続コマンド作成
     con_str = "DRIVER=%s;SERVER=%s;PORT=%s;DATABASE=%s;UID=%s;PWD=%s" % (drv,edp,prt,dbn,usr,pwd)
-
+    print(con_str)
     # 接続
     con = pyodbc.connect(con_str)
     con.setencoding('utf-8')
@@ -33,21 +33,23 @@ def runsql_mss():
     cur = con.cursor()
 
     # 01
-    #sql = '''
-    #    exec rdsadmin..rds_show_configuration 'S3 backup compression'
-    #    '''
-    #print(runsql_mss(sql).fetchall())
-    ## 02
-    #sql = '''
-    #    exec rdsadmin..rds_set_configuration 'S3 backup compression', 'true'
-    #    commit
-    #    '''
-    #runsql_mss(sql)
-    ## 03
-    #sql = '''
-    #    exec rdsadmin..rds_show_configuration 'S3 backup compression'
-    #    '''
-    #print(runsql_mss(sql).fetchall())
+    sql = '''
+        exec rdsadmin..rds_show_configuration 'S3 backup compression'
+        '''
+    print(cur.execute(sql).fetchall())
+
+    # 02
+    sql = '''
+        exec rdsadmin..rds_set_configuration 'S3 backup compression', 'true'
+        commit
+        '''
+    cur.execute(sql)
+
+    # 03
+    sql = '''
+        exec rdsadmin..rds_show_configuration 'S3 backup compression'
+        '''
+    print(cur.execute(sql).fetchall())
 
 
     # 04
@@ -89,19 +91,18 @@ def runsql_mss():
             time.sleep(30)
             print(task_status)
 
+    # 06
+    sql = '''
+        exec rdsadmin..rds_set_configuration 'S3 backup compression', 'false'
+        commit
+        '''
+    cur.execute(sql)
 
-    ## 06
-    #sql = '''
-    #    exec rdsadmin..rds_set_configuration 'S3 backup compression', 'false'
-    #    commit
-    #    '''
-    #runsql_mss(sql)
-    ## 07
-    #sql = '''
-    #    exec rdsadmin..rds_show_configuration 'S3 backup compression'
-    #    '''
-    #print(runsql_mss(sql).fetchall())
-
+    # 07
+    sql = '''
+        exec rdsadmin..rds_show_configuration 'S3 backup compression'
+        '''
+    print(cur.execute(sql).fetchall())
 
     # 切断
     con.close()
