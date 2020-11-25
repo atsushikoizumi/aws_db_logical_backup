@@ -4,6 +4,7 @@ import time
 import pandas as pd
 import numpy as np
 import datetime
+import json
 
 #
 # pyodbcはプロシージャの結果を返さない。
@@ -16,7 +17,9 @@ def runsql_ora():
     drv = "odbcdriver19"
     dbq = os.environ['DB_ENDPOINT'] + ":" + os.environ['DB_PORT'] + "/" + os.environ['DB_NAME']
     usr = os.environ['DB_MASTER']
-    pwd = os.environ['DB_PASSWORD']
+    se_nm = os.environ['tags_owner'] + "-" + os.environ['tags_env'] + "_DBPASSWORD"
+    ps = json.loads(os.environ["{}".format(se_nm)])
+    pwd = ps[os.environ['PASSWORD_KEY']]
 
     # バックアップ環境変数
     os.environ["NLS_LANG"] = "JAPANESE_JAPAN.AL32UTF8"
@@ -33,6 +36,9 @@ def runsql_ora():
 
     # 接続コマンド作成
     con_str = "DRIVER=%s;DBQ=%s;UID=%s;PWD=%s" % (drv,dbq,usr,pwd)
+
+    print(con_str)
+    exit()
 
     # 接続
     try:
