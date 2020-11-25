@@ -13,10 +13,8 @@ export PASSWORD_KEY=oracle
 export S3_BUCKET=koizumi-dev-data
 export S3_PREFIX=backup/rds/oracle
 export DB_SELECT=oracle
-export koizumi-dev_DBPASSWORD=`cat sample.json | jq`
 
-exit
-python3 test_backup.py
+#python3 test_backup.py
 
 
 # sqlserver
@@ -25,10 +23,10 @@ export DB_ENDPOINT=koizumi-dev-sqlserver-1st-backup.cp18wjhx9brf.eu-north-1.rds.
 export DB_PORT=1433
 export DB_NAME=xx00
 export DB_MASTER=masteruser
-export DB_PASSWORD="Admin123!"
+export PASSWORD_KEY=sqlserver
 export S3_BUCKET=koizumi-dev-data
 export S3_PREFIX=backup/rds/sqlserver
 export DB_SELECT=sqlserver
 
-#python3 test_backup.py
+python3 test_backup.py
 

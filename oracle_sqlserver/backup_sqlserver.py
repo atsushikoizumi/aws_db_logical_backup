@@ -2,6 +2,7 @@ import os
 import pyodbc
 import time
 import datetime
+import json
 
 def runsql_mss():
 
@@ -11,7 +12,9 @@ def runsql_mss():
     prt = os.environ['DB_PORT']
     dbn = os.environ['DB_NAME']
     usr = os.environ['DB_MASTER']
-    pwd = os.environ['DB_PASSWORD']
+    se_nm = os.environ['tags_owner'] + "_" + os.environ['tags_env'] + "_DBPASSWORD"
+    ps = json.loads(os.environ["{}".format(se_nm)])
+    pwd = ps[os.environ['PASSWORD_KEY']]
 
     # バックアップ環境変数
     hoge = {'DB_INSTANCE_IDENTIFIER': "", 'DB_NAME': "", 'BACKUP_FILE': "", 'S3_BUCKET': "", 'S3_PREFIX': ""}
@@ -24,7 +27,7 @@ def runsql_mss():
 
     # 接続コマンド作成
     con_str = "DRIVER=%s;SERVER=%s;PORT=%s;DATABASE=%s;UID=%s;PWD=%s" % (drv,edp,prt,dbn,usr,pwd)
-    print(con_str)
+
     # 接続
     con = pyodbc.connect(con_str)
     con.setencoding('utf-8')

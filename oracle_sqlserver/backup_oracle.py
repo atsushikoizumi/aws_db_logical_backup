@@ -17,7 +17,7 @@ def runsql_ora():
     drv = "odbcdriver19"
     dbq = os.environ['DB_ENDPOINT'] + ":" + os.environ['DB_PORT'] + "/" + os.environ['DB_NAME']
     usr = os.environ['DB_MASTER']
-    se_nm = os.environ['tags_owner'] + "-" + os.environ['tags_env'] + "_DBPASSWORD"
+    se_nm = os.environ['tags_owner'] + "_" + os.environ['tags_env'] + "_DBPASSWORD"
     ps = json.loads(os.environ["{}".format(se_nm)])
     pwd = ps[os.environ['PASSWORD_KEY']]
 
@@ -36,9 +36,6 @@ def runsql_ora():
 
     # 接続コマンド作成
     con_str = "DRIVER=%s;DBQ=%s;UID=%s;PWD=%s" % (drv,dbq,usr,pwd)
-
-    print(con_str)
-    exit()
 
     # 接続
     try:
@@ -114,7 +111,6 @@ def runsql_ora():
             p_prefix         =>  '{EXP_P_PREFIX}')
         FROM DUAL;
         '''.format(**hoge)
-    print(sql03)
     try:
         # 原因不明でよくコケる。少しの間 sleep させる。
         time.sleep(30)
@@ -148,7 +144,6 @@ def runsql_ora():
         for i in res:
             print(i[0])
             if "The task finished successfully." in i[0]:
-                print("s3 upload successfully.")
                 # この break は for に対してのみ有効である。
                 break
             # タスク失敗時、upload_to_s3 をリトライさせる。
