@@ -13,7 +13,7 @@ import datetime
 def runsql_ora():
 
     # 接続情報
-    drv = "ORACLEODBCDRIVER"
+    drv = "odbcdriver19"
     dbq = os.environ['DB_ENDPOINT'] + ":" + os.environ['DB_PORT'] + "/" + os.environ['DB_NAME']
     usr = os.environ['DB_MASTER']
     pwd = os.environ['DB_PASSWORD']

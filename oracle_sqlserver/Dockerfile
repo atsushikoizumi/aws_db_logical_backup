@@ -18,9 +18,9 @@ RUN  apt-get update -y && \
 RUN  mkdir -p /opt/oracle && \
      cd /root/efs/odbc/ && \
      unzip instantclient-basic-linux.x64-19.9.0.0.0dbru.zip -d /opt/oracle && \
-     unzip instantclient-odbc-linux.x64-19.9.0.0.0dbru.zip -d /opt/oracle && \
-     cd /opt/oracle/instantclient_19_9 && \
-     sh -c "echo /opt/oracle/instantclient_19_9 > /etc/ld.so.conf.d/oracle-instantclient.conf"
+     unzip instantclient-odbc-linux.x64-19.9.0.0.0dbru.zip -d /opt/oracle
+     #cd /opt/oracle/instantclient_19_9 && \
+     #sh -c "echo /opt/oracle/instantclient_19_9 > /etc/ld.so.conf.d/oracle-instantclient.conf"
 
 # oracle odbc setting
 RUN  touch /etc/odbcinst.ini; touch /etc/odbc.ini && \
@@ -35,7 +35,7 @@ RUN  curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
      ACCEPT_EULA=Y apt-get install mssql-tools
 
 # pip install
-RUN  pip3 install boto3 datetime os pandas pyodbc numpy time
+RUN  python3 -m pip install boto3 datetime pandas pyodbc numpy
 
 # set module
 COPY ./backup_oracle.py /root/
