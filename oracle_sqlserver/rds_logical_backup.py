@@ -116,12 +116,11 @@ for i in range(len(res1['DBInstances'])):
     try:
         print(str(datetime.datetime.now()) + ':[info] インスタンスの状態が available になるまで待機')
         waiter = rds.get_waiter('db_instance_available')
-        res = waiter.wait(
+        waiter.wait(
             DBInstanceIdentifier = res1['DBInstances'][i]['DBInstanceIdentifier'] + "-backup"
         )
     except:
         print(str(datetime.datetime.now()) + ':[ERROR] rds.get_waiter()')
-        print(res)
         exit()
 
     # oracle の場合、S3_INTEGRATIONのロールを付与
@@ -186,3 +185,5 @@ for i in range(len(res1['DBInstances'])):
 
     # 正常終了
     print(str(datetime.datetime.now()) + ':[info] all success end.')
+
+    time.sleep(10)
